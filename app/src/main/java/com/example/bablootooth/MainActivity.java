@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -30,6 +31,13 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView deviceRecyclerView;
     private DeviceAdapter deviceAdapter;
     private final List<String> deviceList = new ArrayList<>();
+
+    private FirebaseAuth mAuth;
 
     private final ActivityResultLauncher<String[]> permissionLauncher =
         registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
@@ -65,6 +75,9 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        // Initialize Firebase Auth
+        FirebaseApp.initializeApp(this);
+        mAuth = FirebaseAuth.getInstance();
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         Button connectButton = findViewById(R.id.btnConnect);
         Button scanButton = findViewById(R.id.btnScan);
@@ -86,7 +99,27 @@ public class MainActivity extends AppCompatActivity {
                         Manifest.permission.BLUETOOTH_CONNECT}
                 );
             } else {
-                connectToBluetooth();
+                String email = "hey@google.com";
+                String password = "qwerty";
+                mAuth.signInWithEmailAndPassword(email, password)
+                        .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                            @Override
+                            public void onComplete(@NonNull Task<AuthResult> task) {
+                                if (task.isSuccessful()) {
+                                    // Sign in success, update UI with the signed-in user's information
+                                    Toast.makeText(MainActivity.this, "Authentication passed.",
+                                            Toast.LENGTH_SHORT).show();
+                                    FirebaseUser user = mAuth.getCurrentUser();
+                                    //updateUI(user);
+                                } else {
+                                    // If sign in fails, display a message to the user.
+                                    Toast.makeText(MainActivity.this, "Authentication failed.",
+                                            Toast.LENGTH_SHORT).show();
+                                    //updateUI(null);
+                                }
+                            }
+                        });
+                //connectToBluetooth();
             }
         });
 
@@ -99,6 +132,7 @@ public class MainActivity extends AppCompatActivity {
             scanNearbyDevices();
         });
     }
+
 
     private void connectToBluetooth() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
@@ -221,6 +255,16 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Scanning for devices...", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, "Failed to start scanning", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        // Check if user is signed in (non-null) and update UI accordingly.
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if(currentUser != null){
+            Toast.makeText(this, currentUser.getEmail(), Toast.LENGTH_SHORT).show();
         }
     }
 }
