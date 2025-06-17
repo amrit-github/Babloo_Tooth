@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
                 );
             } else {
                 String email = "hey@google.com";
-                String password = "qwerty";
+                String password = "";
                 mAuth.signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                             @Override
